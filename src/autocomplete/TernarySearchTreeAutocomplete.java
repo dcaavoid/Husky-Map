@@ -2,6 +2,7 @@ package autocomplete;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Ternary search tree (TST) implementation of the {@link Autocomplete} interface.
@@ -23,14 +24,56 @@ public class TernarySearchTreeAutocomplete implements Autocomplete {
 
     @Override
     public void addAll(Collection<? extends CharSequence> terms) {
-        // TODO: Replace with your code
-        throw new UnsupportedOperationException("Not implemented yet");
+        for(CharSequence term : terms){
+            this.overallRoot = put(this.overallRoot, term, 0);
+        }
+    }
+
+    private Node put(Node root, CharSequence term, int index) {
+        char c = term.charAt(index);
+        if (root == null) {
+            root = new Node(c);
+        }
+
+        if      (c < root.data)                root.left = put(root.left,  term, index);
+        else if (c > root.data)                root.right = put(root.right, term, index);
+        else if (index < term.length() - 1)    root.mid = put(root.mid, term, index+1);
+        else                                   root.isTerm = true;
+        return root;
     }
 
     @Override
     public List<CharSequence> allMatches(CharSequence prefix) {
-        // TODO: Replace with your code
-        throw new UnsupportedOperationException("Not implemented yet");
+        List<CharSequence> matches = new ArrayList<>();
+
+        if(prefix == null || prefix.length() == 0) return matches;
+
+        Node temp = get(this.overallRoot, prefix, 0);
+
+        if(temp == null) return matches;
+        if(temp.isTerm) matches.add(prefix);
+
+        collect(temp.mid, new StringBuilder(prefix), matches);
+        return matches;
+    }
+
+    private Node get(Node root, CharSequence prefix, int d) {
+        if (root == null) return null;
+        if (prefix.length() == 0) throw new IllegalArgumentException("key must have length >= 1");
+        char c = prefix.charAt(d);
+        if      (c < root.data)              return get(root.left,  prefix, d);
+        else if (c > root.data)              return get(root.right, prefix, d);
+        else if (d < prefix.length() - 1)    return get(root.mid, prefix, d+1);
+        else                                 return root;
+    }
+
+    private void collect(Node root, StringBuilder prefix, List<CharSequence> matches) {
+        if (root == null) return;
+        collect(root.left, prefix, matches);
+        if(root.isTerm) matches.add(prefix.toString() + root.data);
+        collect(root.mid, prefix.append(root.data), matches);
+        prefix.deleteCharAt(prefix.length() - 1);
+        collect(root.right, prefix, matches);
     }
 
     /**
